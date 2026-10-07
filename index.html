@@ -108,13 +108,13 @@ button:focus-visible { outline: 4px solid var(--cyan); outline-offset: 3px; }
 .hint { margin: 0; font-size: 12px; font-weight: 800; color: var(--ink); opacity: 0.75; text-align: center; }
 
 /* ---------- game ---------- */
-.hud { position: relative; z-index: 3; padding-block: 10px 6px; padding-inline: 16px; display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 8px 10px; }
-.count { font-family: var(--f-display); font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hud { position: relative; z-index: 3; padding-block: 10px 6px; padding-inline: 16px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 10px; }
+.count { font-family: var(--f-display); font-size: clamp(26px, 8vw, 34px); line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .count small { font-size: 18px; }
 @keyframes throb { 50% { transform: scale(1.25); } }
-.score-box { justify-self: center; text-align: center; }
+.score-box { justify-self: center; text-align: center; min-width: 0; }
 .score-box small { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; }
-.score { font-family: var(--f-display); font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; display: inline-block; }
+.score { font-family: var(--f-display); font-size: clamp(22px, 7.5vw, 30px); line-height: 1; font-variant-numeric: tabular-nums; display: inline-block; white-space: nowrap; }
 .score.bump { animation: bump 0.25s; }
 @keyframes bump { 40% { transform: scale(1.35) rotate(-3deg); } }
 .icon-btn { width: 44px; height: 44px; border: var(--outline); border-radius: 12px; background: var(--paper); font-size: 20px; cursor: pointer; box-shadow: 0 3px 0 var(--ink); }
@@ -205,6 +205,7 @@ button:focus-visible { outline: 4px solid var(--cyan); outline-offset: 3px; }
 .choice:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
 .choice:disabled { background: var(--belt-line); color: var(--paper); box-shadow: 0 2px 0 var(--ink); transform: translateY(4px); text-decoration: line-through; opacity: 0.7; }
 .choice.ok { background: var(--ok); color: var(--paper); animation: pop 0.25s; }
+.pad.ended .choice { visibility: hidden; }
 .choice .key { display: none; font-size: 11px; opacity: 0.7; }
 @media (hover: hover) and (pointer: fine) { .choice .key { display: block; } }
 
@@ -286,7 +287,6 @@ button:focus-visible { outline: 4px solid var(--cyan); outline-offset: 3px; }
   <div class="hud">
     <div class="count telop" id="count">0<small>/30</small></div>
     <div class="score-box"><small>SCORE</small><span class="score telop" id="score">0</span></div>
-    <button class="icon-btn" id="mute" type="button" aria-label="音を切る">🔊</button>
     <button class="icon-btn" id="pause-btn" type="button" aria-label="一時停止・メニュー">⏸</button>
     <div class="hud-row"><div class="progress"><i id="progfill"></i></div><div class="clock" id="clock">0:00</div></div>
   </div>
@@ -308,6 +308,7 @@ button:focus-visible { outline: 4px solid var(--cyan); outline-offset: 3px; }
       <button class="btn primary" type="button" id="resume">つづける</button>
       <button class="btn" type="button" id="restart">さいしょから</button>
       <button class="btn" type="button" id="quit">メニューにもどる</button>
+      <button class="btn" type="button" id="mute">🔊 おと：オン</button>
     </div>
   </div>
 </section>
@@ -531,6 +532,7 @@ function startGame() {
   updateHud(true);
   layout();
   for (const b of choiceBtns) { b.textContent = ""; b.disabled = true; b.className = "choice"; }
+  $("pad").classList.remove("ended");
   countdown();
 }
 
@@ -569,6 +571,8 @@ function spawn(x) {
   el.className = "card" + (gold ? " gold" : "");
   if (!course.pics) el.classList.add("nopic");
   el.innerHTML = (course.pics ? `<div class="pic">${picHTML(q.kanji, true)}</div>` : "") + `<div class="kanji">${q.kanji}</div>`;
+  const chars = [...q.kanji].length, base = course.pics ? 34 : 44;
+  el.querySelector(".kanji").style.fontSize = Math.min(base, Math.floor((CARD_W - 18) / chars)) + "px";
   beltzone.appendChild(el);
   const p = { id: G.nextId++, q, el, x, gold, tried: false, done: false, opts: optionsFor(q) };
   G.plates.push(p);
@@ -738,6 +742,7 @@ function endGame() {
   const g = G;
   g.ending = true;
   for (const b of choiceBtns) b.disabled = true;
+  $("pad").classList.add("ended");
   sfx.end(); banner(`${g.total}問 クリア！`, "pink"); confetti(80); buzz(200);
   setTimeout(() => { if (g === G) showResult(); }, 1600);
 }
@@ -800,7 +805,7 @@ $("quit").onclick = quitToTitle;
 $("retry").onclick = startGame;
 $("to-title").onclick = quitToTitle;
 const muteBtn = $("mute");
-function syncMute() { muteBtn.textContent = muted ? "🔇" : "🔊"; muteBtn.setAttribute("aria-label", muted ? "音を出す" : "音を切る"); }
+function syncMute() { muteBtn.textContent = muted ? "🔇 おと：オフ" : "🔊 おと：オン"; }
 muteBtn.onclick = () => { muted = !muted; store.set("muted", muted); syncMute(); };
 syncMute();
 addEventListener("resize", () => { sizeFx(); if (G) { layout(); } });
