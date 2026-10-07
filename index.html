@@ -1,0 +1,791 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>漢字コンベア</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Klee+One:wght@600&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+/* Layout: one-screen arcade. HUD on top, sunburst stage with a conveyor belt in the middle, 2x2 answer pad at the thumb. */
+:root {
+  color-scheme: light;
+  --sun: #ffd23f;
+  --sun-deep: #ffae00;
+  --ink: #1d1530;
+  --paper: #fffdf6;
+  --pop: #ff3d7f;
+  --cyan: #19bdf0;
+  --lime: #6fd43a;
+  --violet: #9b5cff;
+  --belt: #2b2a33;
+  --belt-line: #45434f;
+  --ok: #18c964;
+  --ng: #ff3b3b;
+  --gold: #ffcc00;
+  --muted: #6d6380;
+
+  --f-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --f-kanji: "Klee One", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-ui: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", system-ui, sans-serif;
+
+  --card-w: 128px;
+  --outline: 3px solid var(--ink);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--sun);
+  color: var(--ink);
+  font-family: var(--f-ui);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+button { font: inherit; color: inherit; touch-action: manipulation; }
+button:focus-visible { outline: 4px solid var(--cyan); outline-offset: 3px; }
+
+.screen { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ---------- sunburst background ---------- */
+.rays {
+  position: absolute; inset: -60%;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, var(--sun) 0deg 10deg, var(--sun-deep) 10deg 20deg);
+  animation: spin 40s linear infinite;
+  z-index: 0; pointer-events: none;
+}
+.fever .rays {
+  background: repeating-conic-gradient(from 0deg, var(--pop) 0deg 10deg, var(--violet) 10deg 20deg, var(--cyan) 20deg 30deg, var(--lime) 30deg 40deg);
+  animation-duration: 6s;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* text with a heavy black outline, like a TV caption */
+.telop {
+  font-family: var(--f-display);
+  color: var(--paper);
+  -webkit-text-stroke: 6px var(--ink);
+  paint-order: stroke fill;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- title ---------- */
+#title { align-items: center; justify-content: center; padding-block: 24px; padding-inline: 16px; }
+.title-inner { position: relative; z-index: 1; width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 18px; align-items: center; }
+.logo { -webkit-text-stroke-width: 4px; margin: 0; font-size: clamp(44px, 14vw, 72px); line-height: 1.05; text-align: center; text-wrap: balance; transform: rotate(-4deg); }
+.logo .accent { color: var(--pop); }
+.logo-sub { margin: 0; font-weight: 800; font-size: 15px; background: var(--ink); color: var(--sun); padding: 4px 14px; border-radius: 999px; letter-spacing: 0.08em; }
+.demo-belt { position: relative; width: 100%; height: 86px; overflow: hidden; }
+.demo-belt .track { position: absolute; left: 0; bottom: 0; height: 18px; width: 100%; background: repeating-linear-gradient(90deg, var(--belt) 0 22px, var(--belt-line) 22px 26px); border: var(--outline); border-radius: 10px; animation: beltmove 0.6s linear infinite; }
+.demo-belt .row { position: absolute; bottom: 14px; display: flex; gap: 14px; animation: demoroll 9s linear infinite; }
+.demo-belt .mini img { width: 48px; height: 48px; }
+.demo-belt .mini { width: 64px; height: 64px; display: grid; place-items: center; font-size: 34px; background: var(--paper); border: var(--outline); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); }
+@keyframes demoroll { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+@keyframes beltmove { to { background-position: -26px 0; } }
+
+.sets { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.set-chip { border: var(--outline); background: var(--paper); border-radius: 999px; padding: 6px 14px; font-weight: 800; font-size: 14px; cursor: pointer; }
+.set-chip[aria-pressed="true"] { background: var(--ink); color: var(--sun); }
+
+.courses { width: 100%; display: grid; gap: 12px; }
+.course {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px;
+  text-align: left; cursor: pointer;
+  background: var(--paper); border: var(--outline); border-radius: 18px;
+  padding: 12px 16px; box-shadow: 0 6px 0 var(--ink);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.course:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
+.course .name { font-family: var(--f-display); font-size: 24px; }
+.course .meta { grid-column: 1; font-size: 13px; color: var(--muted); font-weight: 800; }
+.course .best { grid-row: 1 / span 2; grid-column: 2; text-align: right; font-size: 12px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+.course .best b { display: block; font-family: var(--f-display); font-weight: 400; font-size: 20px; color: var(--ink); }
+.course.easy { background: var(--lime); }
+.course.normal { background: var(--cyan); }
+.course.oni { background: var(--pop); color: var(--paper); }
+.course.oni .meta, .course.oni .best, .course.oni .best b { color: var(--paper); }
+.hint { margin: 0; font-size: 12px; font-weight: 800; color: var(--ink); opacity: 0.75; text-align: center; }
+
+/* ---------- game ---------- */
+.hud { position: relative; z-index: 3; padding-block: 10px 6px; padding-inline: 16px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
+.timer { font-family: var(--f-display); font-size: 40px; line-height: 1; min-width: 2.3ch; text-align: center; font-variant-numeric: tabular-nums; }
+.timer.hurry { color: var(--ng); animation: throb 0.5s ease-in-out infinite; }
+@keyframes throb { 50% { transform: scale(1.25); } }
+.score-box { justify-self: center; text-align: center; }
+.score-box small { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; }
+.score { font-family: var(--f-display); font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; display: inline-block; }
+.score.bump { animation: bump 0.25s; }
+@keyframes bump { 40% { transform: scale(1.35) rotate(-3deg); } }
+.icon-btn { width: 44px; height: 44px; border: var(--outline); border-radius: 12px; background: var(--paper); font-size: 20px; cursor: pointer; box-shadow: 0 3px 0 var(--ink); }
+.timebar { grid-column: 1 / -1; height: 14px; border: var(--outline); border-radius: 999px; background: var(--paper); overflow: hidden; }
+.timebar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--lime), var(--cyan)); transform-origin: left; }
+.timebar.hurry i { background: var(--ng); }
+
+.stage { position: relative; z-index: 1; flex: 1; min-height: 230px; }
+.belt-zone { position: absolute; left: 0; right: 0; bottom: 18%; height: 200px; }
+.belt {
+  position: absolute; left: -10px; right: -10px; bottom: 0; height: 30px;
+  background: repeating-linear-gradient(90deg, var(--belt) 0 30px, var(--belt-line) 30px 36px);
+  border-block: var(--outline);
+  box-shadow: 0 8px 0 rgba(29, 21, 48, 0.25);
+}
+.fever .belt { box-shadow: 0 0 24px 6px var(--paper), 0 8px 0 rgba(29, 21, 48, 0.25); }
+
+.card {
+  position: absolute; left: 0; bottom: 26px; width: var(--card-w);
+  display: flex; flex-direction: column; align-items: stretch;
+  background: var(--paper); border: var(--outline); border-radius: 16px;
+  box-shadow: 4px 5px 0 var(--ink);
+  will-change: transform;
+}
+.card .pic { height: 92px; display: grid; place-items: center; border-bottom: var(--outline); position: relative; overflow: hidden; border-radius: 13px 13px 0 0; background: #fff; }
+.card .pic img { max-width: 92%; max-height: 72px; object-fit: contain; margin-bottom: 10px; }
+.card .emo { font-size: 50px; line-height: 1; margin-bottom: 10px; }
+.card .en { position: absolute; bottom: 3px; left: 4px; right: 4px; text-align: center; font-size: 10px; font-weight: 800; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .kanji { font-family: var(--f-kanji); font-weight: 600; font-size: 34px; line-height: 1.2; text-align: center; padding: 4px 4px 6px; white-space: nowrap; }
+.card.gold { background: var(--gold); box-shadow: 4px 5px 0 var(--ink), 0 0 22px 4px var(--gold); }
+.card.gold::after { content: "×3"; position: absolute; top: -14px; right: -12px; font-family: var(--f-display); font-size: 18px; background: var(--pop); color: var(--paper); border: var(--outline); border-radius: 999px; padding: 0 8px; transform: rotate(10deg); }
+.card.active { z-index: 2; }
+.card.active .inner-scale { animation: bob 0.8s ease-in-out infinite; }
+.card.active::before {
+  content: "これ！"; position: absolute; top: -42px; left: 50%; transform: translateX(-50%);
+  font-family: var(--f-display); font-size: 20px; color: var(--paper); -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill;
+  animation: point 0.6s ease-in-out infinite; white-space: nowrap;
+}
+.card.tried .kanji { color: var(--ng); }
+@keyframes point { 50% { transform: translate(-50%, -6px); } }
+.card.flowed { opacity: 0.35; filter: grayscale(1); transition: opacity 0.3s; }
+
+.combo {
+  position: absolute; z-index: 4; left: 16px; top: 10px; pointer-events: none;
+  font-size: 30px; line-height: 1; transform-origin: left center;
+}
+.combo b { color: var(--pop); font-size: 46px; }
+.combo.pop { animation: pop 0.3s; }
+@keyframes pop { 40% { transform: scale(1.4) rotate(-6deg); } }
+
+.banner {
+  position: absolute; z-index: 6; left: 0; right: 0; top: 28%;
+  text-align: center; pointer-events: none;
+  font-size: clamp(34px, 11vw, 64px);
+  animation: slam 1s cubic-bezier(.2, 1.6, .4, 1) forwards;
+}
+.banner.red { color: var(--ng); }
+.banner.pink { color: var(--pop); }
+.banner.cyan { color: var(--cyan); }
+.banner.gold { color: var(--gold); }
+@keyframes slam {
+  0% { transform: scale(3) rotate(-8deg); opacity: 0; }
+  25% { transform: scale(1) rotate(-4deg); opacity: 1; }
+  80% { transform: scale(1.05) rotate(-4deg); opacity: 1; }
+  100% { transform: scale(0.9) translateY(-30px) rotate(-4deg); opacity: 0; }
+}
+.float {
+  position: absolute; z-index: 5; pointer-events: none;
+  font-size: 26px; white-space: nowrap; transform: translate(-50%, 0);
+  animation: rise 0.9s ease-out forwards;
+}
+@keyframes rise { to { transform: translate(-50%, -80px) scale(1.2); opacity: 0; } }
+
+.pad { position: relative; z-index: 3; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-block: 8px 14px; padding-inline: 16px; }
+.choice {
+  min-height: 68px; border: var(--outline); border-radius: 18px; cursor: pointer;
+  font-weight: 800; font-size: clamp(20px, 6vw, 28px); line-height: 1.1;
+  box-shadow: 0 6px 0 var(--ink); transition: transform 0.06s, box-shadow 0.06s;
+  padding: 6px; min-width: 0; overflow-wrap: anywhere;
+}
+.choice:nth-child(1) { background: var(--cyan); }
+.choice:nth-child(2) { background: var(--pop); color: var(--paper); }
+.choice:nth-child(3) { background: var(--lime); }
+.choice:nth-child(4) { background: var(--violet); color: var(--paper); }
+.choice:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
+.choice:disabled { background: var(--belt-line); color: var(--paper); box-shadow: 0 2px 0 var(--ink); transform: translateY(4px); text-decoration: line-through; opacity: 0.7; }
+.choice.ok { background: var(--ok); color: var(--paper); animation: pop 0.25s; }
+.choice .key { display: none; font-size: 11px; opacity: 0.7; }
+@media (hover: hover) and (pointer: fine) { .choice .key { display: block; } }
+
+.flash { position: absolute; inset: 0; z-index: 7; pointer-events: none; opacity: 0; }
+.flash.red { background: var(--ng); animation: flash 0.35s; }
+.flash.white { background: var(--paper); animation: flash 0.25s; }
+@keyframes flash { 0% { opacity: 0.55; } 100% { opacity: 0; } }
+.shake { animation: shake 0.35s; }
+@keyframes shake {
+  20% { transform: translate(-9px, 3px) rotate(-1deg); } 40% { transform: translate(8px, -4px) rotate(1deg); }
+  60% { transform: translate(-6px, 2px); } 80% { transform: translate(4px, -1px); }
+}
+
+.overlay { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; pointer-events: none; }
+.countdown { font-size: clamp(90px, 34vw, 180px); animation: slam 0.9s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+
+/* ---------- result ---------- */
+#result { overflow-y: auto; padding-block: 20px 28px; padding-inline: 16px; align-items: center; }
+.result-inner { position: relative; z-index: 1; width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 14px; }
+.result-head { text-align: center; font-size: 40px; margin: 0; }
+.sheet { background: var(--paper); border: var(--outline); border-radius: 20px; box-shadow: 0 6px 0 var(--ink); padding: 18px; position: relative; display: grid; gap: 12px; }
+.big-score { text-align: center; font-family: var(--f-display); font-size: 54px; line-height: 1; font-variant-numeric: tabular-nums; }
+.big-score small { display: block; font-family: var(--f-ui); font-size: 12px; font-weight: 800; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
+.newbest { justify-self: center; background: var(--pop); color: var(--paper); font-weight: 800; font-size: 13px; padding: 3px 12px; border-radius: 999px; animation: throb 0.8s infinite; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.stats div { border: 2px solid var(--ink); border-radius: 12px; padding: 6px 4px; }
+.stats b { display: block; font-family: var(--f-display); font-weight: 400; font-size: 22px; font-variant-numeric: tabular-nums; }
+.stats span { font-size: 11px; font-weight: 800; color: var(--muted); }
+.stamp {
+  position: absolute; top: -18px; right: -6px; width: 92px; height: 92px; border-radius: 50%;
+  display: grid; place-items: center; text-align: center;
+  border: 4px solid var(--ng); color: var(--ng); background: var(--paper);
+  font-family: var(--f-display); line-height: 1; transform: rotate(14deg);
+  animation: stamp 0.5s 0.4s cubic-bezier(.3, 1.8, .5, 1) both;
+}
+.stamp b { font-size: 40px; display: block; }
+.stamp span { font-size: 10px; display: block; padding-inline: 6px; }
+@keyframes stamp { from { transform: scale(4) rotate(-20deg); opacity: 0; } to { transform: scale(1) rotate(14deg); opacity: 1; } }
+.review h2 { margin: 0; font-size: 16px; font-weight: 800; }
+.review p { margin: 0; font-size: 13px; color: var(--muted); font-weight: 500; }
+.review ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.review li { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; border: 2px solid var(--ink); border-radius: 12px; padding: 6px 8px; min-width: 0; }
+.review .r-pic { width: 40px; height: 40px; display: grid; place-items: center; font-size: 28px; }
+.review .r-pic img { max-width: 40px; max-height: 40px; }
+.review .r-k { font-family: var(--f-kanji); font-weight: 600; font-size: 22px; line-height: 1.1; }
+.review .r-y { font-size: 13px; font-weight: 800; color: var(--pop); }
+.perfect { text-align: center; font-weight: 800; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn { border: var(--outline); border-radius: 16px; min-height: 56px; font-weight: 800; font-size: 17px; cursor: pointer; box-shadow: 0 5px 0 var(--ink); background: var(--paper); }
+.btn.primary { background: var(--pop); color: var(--paper); }
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rays, .demo-belt .row, .demo-belt .track, .card.active::before, .card.active .inner-scale { animation: none !important; }
+  .shake { animation: none; }
+}
+</style>
+
+<section id="title" class="screen">
+  <div class="rays"></div>
+  <div class="title-inner">
+    <h1 class="logo telop">漢字<span class="accent">コンベア</span></h1>
+    <p class="logo-sub" id="set-label">GENKI I 漢字よみ</p>
+    <div class="demo-belt" aria-hidden="true"><div class="row" id="demo-row"></div><div class="track"></div></div>
+    <div class="sets" id="sets"></div>
+    <div class="courses" id="courses"></div>
+    <p class="hint">ながれてくる漢字の よみ を4つから えらぼう！ 5れんぞくで +3びょう、10れんぞくで FEVER!!</p>
+  </div>
+</section>
+
+<section id="game" class="screen" hidden>
+  <div class="rays"></div>
+  <div class="hud">
+    <div class="timer telop" id="timer">60</div>
+    <div class="score-box"><small>SCORE</small><span class="score telop" id="score">0</span></div>
+    <button class="icon-btn" id="mute" type="button" aria-label="音を切る">🔊</button>
+    <div class="timebar" id="timebar"><i id="timefill"></i></div>
+  </div>
+  <div class="stage" id="stage">
+    <div class="combo telop" id="combo" hidden></div>
+    <div class="belt-zone" id="beltzone"><div class="belt" id="belt"></div></div>
+  </div>
+  <div class="pad" id="pad">
+    <button class="choice" type="button" id="c0"></button>
+    <button class="choice" type="button" id="c1"></button>
+    <button class="choice" type="button" id="c2"></button>
+    <button class="choice" type="button" id="c3"></button>
+  </div>
+  <div class="flash" id="flash"></div>
+  <div class="overlay" id="overlay"></div>
+</section>
+
+<section id="result" class="screen" hidden>
+  <div class="rays"></div>
+  <div class="result-inner">
+    <h2 class="result-head telop">しゅうりょう！</h2>
+    <div class="sheet">
+      <div class="stamp" id="stamp"><b id="rank">S</b><span id="rank-name">漢字マスター</span></div>
+      <div class="big-score"><small id="res-course">ふつう コース</small><span id="res-score">0</span></div>
+      <div class="newbest" id="newbest" hidden>じこベスト更新！</div>
+      <div class="stats">
+        <div><b id="res-correct">0</b><span>せいかい</span></div>
+        <div><b id="res-acc">0%</b><span>せいかいりつ</span></div>
+        <div><b id="res-combo">0</b><span>さいだいコンボ</span></div>
+      </div>
+    </div>
+    <div class="sheet review">
+      <h2>まちがえた漢字</h2>
+      <p>まちがえた漢字だけ、もう一度声に出して読んでみよう。</p>
+      <ul id="review-list"></ul>
+    </div>
+    <div class="actions">
+      <button class="btn" type="button" id="to-title">コースをえらぶ</button>
+      <button class="btn primary" type="button" id="retry">もう一回！</button>
+    </div>
+  </div>
+</section>
+
+<canvas id="fx"></canvas>
+
+<script src="questions.js"></script>
+<script>
+(() => {
+"use strict";
+const $ = (id) => document.getElementById(id);
+
+/* ================= settings ================= */
+const COURSES = [
+  { id: "easy",   name: "かんたん", cls: "easy",   time: 60, travel: 11, meta: "60びょう・ゆっくり" },
+  { id: "normal", name: "ふつう",   cls: "normal", time: 90, travel: 8,  meta: "90びょう・ふつう" },
+  { id: "oni",    name: "おに",     cls: "oni",    time: 90, travel: 5,  meta: "90びょう・はやい！" },
+];
+const RANKS = [ // points per second
+  [110, "S", "漢字マスター"], [75, "A", "すごい！"], [45, "B", "いいかんじ"], [22, "C", "もうすこし"], [0, "D", "れんしゅうしよう"],
+];
+const COMBO_TIME_EVERY = 5, COMBO_TIME_BONUS = 3, FEVER_AT = 10, GOLD_RATE = 0.1;
+
+/* ================= question data ================= */
+const ICONS = window.WORD_ICONS || {};
+const IMAGES = window.WORD_IMAGES || {};
+const SETS = Object.entries(window.QUESTION_SETS || {}).map(([name, rows]) => ({
+  name,
+  qs: (rows || []).filter((r) => Array.isArray(r) && r.length >= 2).map((r) => ({
+    kanji: String(r[0]), answer: String(r[1]), wrong: r.slice(2).filter(Boolean).map(String),
+  })),
+})).filter((s) => s.qs.length);
+
+const imgCache = {}; // kanji -> url | false | Promise
+function probeImage(kanji) {
+  if (kanji in imgCache) return;
+  const url = IMAGES[kanji] || "img/" + encodeURIComponent(kanji) + ".png";
+  imgCache[kanji] = null;
+  const im = new Image();
+  im.onload = () => { imgCache[kanji] = url; onImage(); };
+  im.onerror = () => { imgCache[kanji] = false; };
+  im.src = url;
+}
+function picHTML(kanji, withEn) {
+  const url = imgCache[kanji];
+  const [emo, en] = ICONS[kanji] || ["❓", ""];
+  const label = withEn && en ? `<span class="en">${en}</span>` : "";
+  if (url) return `<img src="${url}" alt="">` + label;
+  return `<span class="emo">${emo}</span>` + label;
+}
+
+/* ================= persistence ================= */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("kanjiconveyor:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("kanjiconveyor:" + k, JSON.stringify(v)); } catch (e) {} },
+};
+
+/* ================= audio ================= */
+let ac = null, muted = store.get("muted", false);
+function audio() {
+  if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (ac.state === "suspended") ac.resume();
+  return ac;
+}
+function tone(freq, dur = 0.12, type = "square", vol = 0.07, delay = 0, slideTo = 0) {
+  if (muted) return;
+  const a = audio(); if (!a) return;
+  const t = a.currentTime + delay;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(a.destination);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+const sfx = {
+  ok(combo) { const b = 523 * Math.pow(2, Math.min(combo, 15) / 12); tone(b, 0.09, "square", 0.06); tone(b * 1.5, 0.16, "square", 0.06, 0.07); },
+  gold() { [0, 4, 7, 12, 16].forEach((s, i) => tone(784 * Math.pow(2, s / 12), 0.12, "triangle", 0.08, i * 0.05)); },
+  ng() { tone(180, 0.28, "sawtooth", 0.08, 0, 70); },
+  miss() { tone(440, 0.4, "triangle", 0.08, 0, 140); },
+  tick() { tone(1200, 0.04, "square", 0.04); },
+  count() { tone(660, 0.15, "square", 0.07); },
+  go() { [523, 659, 784, 1046].forEach((f) => tone(f, 0.35, "square", 0.05)); },
+  bonus() { tone(880, 0.08, "square", 0.06); tone(1175, 0.15, "square", 0.06, 0.08); },
+  fever() { [0, 4, 7, 12, 7, 12, 16, 19].forEach((s, i) => tone(523 * Math.pow(2, s / 12), 0.1, "square", 0.06, i * 0.07)); },
+  end() { tone(220, 1.2, "sine", 0.15, 0, 110); tone(330, 1.2, "sine", 0.08); },
+  fanfare() { [0, 4, 7, 12, 12, 16, 19, 24].forEach((s, i) => tone(392 * Math.pow(2, s / 12), 0.18, "square", 0.05, i * 0.09)); },
+};
+function buzz(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
+
+/* ================= particles ================= */
+const fx = $("fx"), ctx = fx.getContext("2d");
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let parts = [], dpr = 1;
+function sizeFx() { dpr = Math.min(2, window.devicePixelRatio || 1); fx.width = innerWidth * dpr; fx.height = innerHeight * dpr; }
+sizeFx();
+const PCOLORS = ["#ff3d7f", "#19bdf0", "#6fd43a", "#9b5cff", "#ffcc00", "#fffdf6"];
+function burst(x, y, n = 26, colors = PCOLORS, power = 1) {
+  if (reduceMotion) n = Math.ceil(n / 4);
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, s = (2 + Math.random() * 7) * power;
+    parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 3, g: 0.25, life: 1, decay: 0.012 + Math.random() * 0.02,
+      size: 4 + Math.random() * 6, color: colors[(Math.random() * colors.length) | 0], star: Math.random() < 0.4, rot: Math.random() * 6 });
+  }
+}
+function confetti(n = 120) {
+  if (reduceMotion) n = 30;
+  for (let i = 0; i < n; i++) {
+    parts.push({ x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * 0.5, vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 3, g: 0.05,
+      life: 1, decay: 0.004 + Math.random() * 0.004, size: 6 + Math.random() * 6, color: PCOLORS[(Math.random() * PCOLORS.length) | 0], rect: true, rot: Math.random() * 6 });
+  }
+}
+function drawStar(x, y, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) { const a = (i * Math.PI) / 5 - Math.PI / 2, rr = i % 2 ? r * 0.45 : r; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+  ctx.closePath(); ctx.fill();
+}
+function stepFx() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter((p) => p.life > 0 && p.y < innerHeight + 40);
+  for (const p of parts) {
+    p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life -= p.decay; p.rot += 0.2; p.vx *= 0.99;
+    ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.color;
+    if (p.rect) { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2); ctx.restore(); }
+    else if (p.star) drawStar(p.x, p.y, p.size);
+    else { ctx.beginPath(); ctx.arc(p.x, p.y, p.size / 2, 0, 7); ctx.fill(); }
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ================= title screen ================= */
+let setIndex = Math.min(store.get("set", 0), Math.max(0, SETS.length - 1)); // -1 = all
+let course = COURSES[1];
+function poolFor(idx) { return idx < 0 ? SETS.flatMap((s) => s.qs) : (SETS[idx] ? SETS[idx].qs : []); }
+function renderTitle() {
+  const sets = $("sets"); sets.innerHTML = "";
+  const opts = SETS.map((s, i) => [i, s.name]);
+  if (SETS.length > 1) opts.push([-1, "ぜんぶ"]);
+  if (opts.length > 1) {
+    for (const [i, name] of opts) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "set-chip"; b.textContent = name; b.setAttribute("aria-pressed", String(i === setIndex));
+      b.onclick = () => { setIndex = i; store.set("set", i); renderTitle(); };
+      sets.appendChild(b);
+    }
+  }
+  $("set-label").textContent = setIndex < 0 ? "ぜんぶの問題" : (SETS[setIndex] ? SETS[setIndex].name : "問題がありません");
+  const cs = $("courses"); cs.innerHTML = "";
+  for (const c of COURSES) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "course " + c.cls; b.id = "course-" + c.id;
+    const best = store.get(bestKey(c), 0);
+    b.innerHTML = `<span class="name">${c.name}</span><span class="meta">${c.meta}</span><span class="best">ベスト<b>${best.toLocaleString()}</b></span>`;
+    b.onclick = () => { course = c; startGame(); };
+    cs.appendChild(b);
+  }
+  const demo = $("demo-row"); demo.innerHTML = "";
+  poolFor(setIndex).slice(0, 10).forEach((q) => {
+    const d = document.createElement("div"); d.className = "mini"; d.innerHTML = picHTML(q.kanji, false); demo.appendChild(d);
+  });
+}
+function bestKey(c) { return "best:" + c.id + ":" + (setIndex < 0 ? "*" : (SETS[setIndex] || {}).name); }
+
+/* ================= game state ================= */
+let G = null;
+const beltzone = $("beltzone"), belt = $("belt"), stage = $("stage"), gameEl = $("game");
+const choiceBtns = [0, 1, 2, 3].map((i) => $("c" + i));
+
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function show(id) { for (const s of ["title", "game", "result"]) $(s).hidden = s !== id; }
+
+function startGame() {
+  const pool = poolFor(setIndex);
+  if (!pool.length) return;
+  audio();
+  pool.forEach((q) => probeImage(q.kanji));
+  show("game");
+  beltzone.querySelectorAll(".card").forEach((n) => n.remove());
+  G = {
+    pool, deck: [], plates: [], nextId: 1, spawnDist: 0, beltOffset: 0,
+    time: course.time, running: false, score: 0, correct: 0, answered: 0, flowed: 0,
+    combo: 0, maxCombo: 0, fever: false, mistakes: new Map(), renderedFor: 0, lastTick: Math.ceil(course.time), lockUntil: 0,
+  };
+  gameEl.classList.remove("fever");
+  $("combo").hidden = true;
+  updateHud(true);
+  layout();
+  for (const b of choiceBtns) { b.textContent = ""; b.disabled = true; b.className = "choice"; }
+  countdown();
+}
+
+function countdown() {
+  const ov = $("overlay");
+  const steps = ["3", "2", "1", "スタート！"];
+  steps.forEach((t, i) => setTimeout(() => {
+    ov.innerHTML = `<div class="countdown telop" style="${i === 3 ? "font-size:clamp(48px,16vw,96px);color:var(--pop)" : ""}">${t}</div>`;
+    if (i < 3) sfx.count(); else { sfx.go(); flash("white"); G.running = true; }
+  }, i * 700));
+  setTimeout(() => { ov.innerHTML = ""; }, steps.length * 700 + 300);
+}
+
+function drawQuestion() {
+  if (!G.deck.length) {
+    G.deck = shuffle(G.pool.slice());
+    if (G.lastKanji && G.deck.length > 1 && G.deck[G.deck.length - 1].kanji === G.lastKanji) G.deck.unshift(G.deck.pop());
+  }
+  const q = G.deck.pop(); G.lastKanji = q.kanji; return q;
+}
+function optionsFor(q) {
+  const wrong = shuffle(q.wrong.filter((w) => w !== q.answer)).slice(0, 3);
+  if (wrong.length < 3) {
+    const extra = shuffle(G.pool.map((p) => p.answer).filter((a) => a !== q.answer && !wrong.includes(a)));
+    while (wrong.length < 3 && extra.length) wrong.push(extra.pop());
+  }
+  return shuffle([q.answer, ...wrong]);
+}
+
+let W = 360, CARD_W = 128, SPACING = 170;
+function layout() {
+  W = beltzone.clientWidth || innerWidth;
+  CARD_W = W < 380 ? 116 : 128;
+  document.documentElement.style.setProperty("--card-w", CARD_W + "px");
+  SPACING = Math.max(CARD_W + 44, W / 4);
+}
+
+function spawn(x) {
+  const q = drawQuestion();
+  const gold = G.correct > 2 && Math.random() < GOLD_RATE;
+  const el = document.createElement("div");
+  el.className = "card" + (gold ? " gold" : "");
+  el.innerHTML = `<div class="pic">${picHTML(q.kanji, true)}</div><div class="kanji">${q.kanji}</div>`;
+  beltzone.appendChild(el);
+  const p = { id: G.nextId++, q, el, x, gold, tried: false, done: false, opts: optionsFor(q) };
+  G.plates.push(p);
+  place(p);
+}
+function place(p) { p.el.style.transform = `translateX(${p.x - CARD_W / 2}px)${p.el.classList.contains("active") ? " scale(1.12)" : ""}`; }
+function activePlate() { return G.plates.find((p) => !p.done); }
+
+function renderChoices(p) {
+  G.renderedFor = p.id;
+  G.plates.forEach((o) => o.el.classList.toggle("active", o === p));
+  p.opts.forEach((o, i) => {
+    const b = choiceBtns[i];
+    b.className = "choice"; b.disabled = false;
+    b.innerHTML = `${o}<span class="key">${i + 1}</span>`;
+    b.dataset.v = o;
+  });
+  G.lockUntil = performance.now() + 120;
+}
+
+function answer(i) {
+  if (!G || !G.running) return;
+  const p = activePlate(); if (!p || performance.now() < G.lockUntil) return;
+  const b = choiceBtns[i]; if (b.disabled) return;
+  G.answered++;
+  if (b.dataset.v === p.q.answer) eat(p, b); else wrong(p, b);
+}
+
+function cardCenter(p) {
+  const r = p.el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2, sr: stage.getBoundingClientRect() };
+}
+
+function eat(p, btn) {
+  p.done = true;
+  G.correct++; G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo);
+  btn.classList.add("ok");
+  let pts = 100 + 20 * Math.min(G.combo, 20);
+  if (p.gold) pts *= 3;
+  if (G.fever) pts *= 2;
+  if (p.tried) pts = Math.round(pts / 2);
+  G.score += pts;
+
+  const c = cardCenter(p);
+  floatText(`+${pts}`, c.x - c.sr.left, c.y - c.sr.top - 60, p.gold ? "var(--gold)" : "var(--paper)");
+  burst(c.x, c.y, p.gold ? 60 : 28, p.gold ? ["#ffcc00", "#fffdf6", "#ff3d7f"] : PCOLORS, p.gold ? 1.4 : 1);
+  if (p.gold) { sfx.gold(); banner("ボーナス×3！", "gold"); } else sfx.ok(G.combo);
+  buzz(15);
+
+  const sc = $("score").getBoundingClientRect();
+  const anim = p.el.animate([
+    { transform: `translateX(${p.x - CARD_W / 2}px) scale(1.12)`, opacity: 1 },
+    { transform: `translate(${p.x - CARD_W / 2}px, -60px) scale(1.4) rotate(-8deg)`, opacity: 1, offset: 0.3 },
+    { transform: `translate(${sc.left + sc.width / 2 - c.sr.left - CARD_W / 2}px, ${sc.top - c.y}px) scale(0.15) rotate(540deg)`, opacity: 0.6 },
+  ], { duration: 520, easing: "cubic-bezier(.5,0,.7,1)" });
+  anim.onfinish = () => { p.el.remove(); bumpScore(); };
+
+  if (G.combo % COMBO_TIME_EVERY === 0) {
+    G.time += COMBO_TIME_BONUS; sfx.bonus();
+    floatText(`+${COMBO_TIME_BONUS}びょう！`, 70, 60, "var(--lime)");
+  }
+  if (G.combo === FEVER_AT) startFever();
+  else if (G.combo > 1 && G.combo % 10 === 0) { banner(`${G.combo}コンボ！！`, "pink"); confetti(60); }
+  updateCombo();
+}
+
+function wrong(p, btn) {
+  btn.disabled = true;
+  p.tried = true; p.el.classList.add("tried");
+  G.mistakes.set(p.q.kanji, p.q);
+  breakCombo();
+  sfx.ng(); buzz([40, 30, 40]);
+  flash("red"); shake();
+  const c = cardCenter(p);
+  floatText("ブッブー", c.x - c.sr.left, c.y - c.sr.top - 70, "var(--ng)");
+}
+
+function flowAway(p) {
+  p.done = true;
+  G.mistakes.set(p.q.kanji, p.q);
+  G.flowed++;
+  breakCombo();
+  sfx.miss();
+  p.el.classList.add("flowed", "active");
+  floatText(`${p.q.kanji}＝${p.q.answer}`, 90, 40, "var(--ng)");
+  setTimeout(() => p.el.remove(), 900);
+}
+
+function breakCombo() {
+  if (G.combo >= 3) floatText(`${G.combo}コンボ おわり…`, W / 2, 20, "var(--paper)");
+  G.combo = 0;
+  if (G.fever) { G.fever = false; gameEl.classList.remove("fever"); }
+  updateCombo();
+}
+
+function startFever() {
+  G.fever = true; gameEl.classList.add("fever");
+  sfx.fever(); banner("FEVER!! 2ばい", "pink"); confetti(140); flash("white"); buzz([30, 30, 30, 30, 60]);
+}
+
+/* ---------- effects ---------- */
+function floatText(text, x, y, color) {
+  const d = document.createElement("div");
+  d.className = "float telop"; d.textContent = text; d.style.left = x + "px"; d.style.top = y + "px"; d.style.color = color;
+  stage.appendChild(d); setTimeout(() => d.remove(), 950);
+}
+function banner(text, cls) {
+  const d = document.createElement("div");
+  d.className = "banner telop " + (cls || ""); d.textContent = text;
+  gameEl.appendChild(d); setTimeout(() => d.remove(), 1050);
+}
+function flash(kind) { const f = $("flash"); f.className = "flash"; void f.offsetWidth; f.className = "flash " + kind; }
+function shake() { if (reduceMotion) return; gameEl.classList.remove("shake"); void gameEl.offsetWidth; gameEl.classList.add("shake"); }
+function bumpScore() { const s = $("score"); s.classList.remove("bump"); void s.offsetWidth; s.classList.add("bump"); }
+function updateCombo() {
+  const c = $("combo");
+  if (G.combo >= 2) {
+    c.hidden = false; c.innerHTML = `<b>${G.combo}</b> コンボ${G.fever ? " 🔥" : ""}`;
+    c.classList.remove("pop"); void c.offsetWidth; c.classList.add("pop");
+  } else c.hidden = true;
+}
+let shownScore = 0;
+function updateHud(force) {
+  const t = Math.max(0, G.time);
+  const tEl = $("timer");
+  tEl.textContent = Math.ceil(t);
+  const hurry = t <= 10 && G.running;
+  tEl.classList.toggle("hurry", hurry);
+  $("timebar").classList.toggle("hurry", hurry);
+  $("timefill").style.transform = `scaleX(${Math.min(1, t / course.time)})`;
+  if (force) shownScore = G.score;
+  shownScore += Math.ceil((G.score - shownScore) * 0.25);
+  if (Math.abs(G.score - shownScore) < 2) shownScore = G.score;
+  $("score").textContent = shownScore.toLocaleString();
+}
+
+/* ---------- main loop ---------- */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (G && G.running && !$("game").hidden) tickGame(dt);
+  if (G && !$("game").hidden) updateHud(false);
+  stepFx();
+  requestAnimationFrame(frame);
+}
+function tickGame(dt) {
+  G.time -= dt;
+  const sec = Math.ceil(G.time);
+  if (sec < G.lastTick) { G.lastTick = sec; if (sec <= 10 && sec > 0) sfx.tick(); }
+  if (G.time <= 0) { G.time = 0; endGame(); return; }
+
+  const progress = Math.min(1, G.correct / 40);
+  let v = (W + CARD_W) / (course.travel * (1 - 0.35 * progress));
+  let act = activePlate();
+  if (!act || act.x > W * 0.6) v *= 3.5; // rush the belt when the next card is still far away
+
+  G.spawnDist -= v * dt;
+  while (G.spawnDist <= 0) { spawn(W + CARD_W / 2 + G.spawnDist + 10); G.spawnDist += SPACING; }
+
+  for (const p of G.plates) if (!p.done) { p.x -= v * dt; place(p); }
+  G.beltOffset = (G.beltOffset - v * dt) % 36;
+  belt.style.backgroundPosition = `${G.beltOffset}px 0`;
+
+  act = activePlate();
+  if (act && act.x < -CARD_W / 2 + 10) { flowAway(act); act = activePlate(); }
+  if (act && act.id !== G.renderedFor) renderChoices(act);
+  G.plates = G.plates.filter((p) => !p.done || p.el.isConnected);
+}
+
+/* ---------- end / result ---------- */
+function endGame() {
+  G.running = false;
+  for (const b of choiceBtns) b.disabled = true;
+  sfx.end(); banner("しゅうりょう〜！", "red"); buzz(200);
+  setTimeout(showResult, 1500);
+}
+function showResult() {
+  show("result");
+  const total = course.time; // base time, bonuses don't count against
+  const pps = G.score / total;
+  const [, r, rName] = RANKS.find(([min]) => pps >= min);
+  $("rank").textContent = r; $("rank-name").textContent = rName;
+  $("res-course").textContent = `${course.name} コース`;
+  $("res-correct").textContent = G.correct;
+  const tries = G.answered + G.flowed;
+  $("res-acc").textContent = tries ? Math.round((G.correct / tries) * 100) + "%" : "0%";
+  $("res-combo").textContent = G.maxCombo;
+  const key = bestKey(course), best = store.get(key, 0);
+  const isBest = G.score > best;
+  if (isBest) store.set(key, G.score);
+  $("newbest").hidden = !isBest;
+  // count up
+  const el = $("res-score"), target = G.score, t0 = performance.now();
+  (function up(now) {
+    const k = Math.min(1, (now - t0) / 1200);
+    el.textContent = Math.round(target * (1 - Math.pow(1 - k, 3))).toLocaleString();
+    if (k < 1) requestAnimationFrame(up);
+  })(t0);
+  const list = $("review-list"); list.innerHTML = "";
+  if (!G.mistakes.size) {
+    list.outerHTML = `<ul id="review-list"><li class="perfect" style="grid-column:1/-1;display:block">ノーミス！パーフェクト！</li></ul>`;
+  } else {
+    for (const q of G.mistakes.values()) {
+      const li = document.createElement("li");
+      li.innerHTML = `<div class="r-pic">${picHTML(q.kanji, false)}</div><div><div class="r-k">${q.kanji}</div><div class="r-y">${q.answer}</div></div>`;
+      list.appendChild(li);
+    }
+  }
+  if (r === "S" || r === "A" || isBest) { sfx.fanfare(); confetti(160); }
+}
+
+/* ---------- wiring ---------- */
+choiceBtns.forEach((b, i) => b.addEventListener("pointerdown", (e) => { e.preventDefault(); answer(i); }));
+choiceBtns.forEach((b, i) => b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); answer(i); } }));
+document.addEventListener("keydown", (e) => {
+  if ($("game").hidden) return;
+  const k = { "1": 0, "2": 1, "3": 2, "4": 3, a: 0, s: 1, d: 2, f: 3 }[e.key.toLowerCase()];
+  if (k != null) answer(k);
+});
+$("retry").onclick = startGame;
+$("to-title").onclick = () => { renderTitle(); show("title"); };
+const muteBtn = $("mute");
+function syncMute() { muteBtn.textContent = muted ? "🔇" : "🔊"; muteBtn.setAttribute("aria-label", muted ? "音を出す" : "音を切る"); }
+muteBtn.onclick = () => { muted = !muted; store.set("muted", muted); syncMute(); };
+syncMute();
+addEventListener("resize", () => { sizeFx(); if (G) { layout(); } });
+document.addEventListener("visibilitychange", () => { if (document.hidden) last = performance.now() + 1e9; else last = performance.now(); });
+
+if (!SETS.length) {
+  document.querySelector(".hint").textContent = "questions.js に問題が見つかりません。ファイルを確認してください。";
+}
+let imgTimer = 0;
+function onImage() { clearTimeout(imgTimer); imgTimer = setTimeout(() => { if (!$("title").hidden) renderTitle(); }, 150); }
+SETS.forEach((st) => st.qs.forEach((q) => probeImage(q.kanji)));
+renderTitle();
+requestAnimationFrame((t) => { last = t; requestAnimationFrame(frame); });
+})();
+</script>
