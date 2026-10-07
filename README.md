@@ -10,19 +10,9 @@ GENKI I の漢字よみ小テストを、ベルトコンベア式のスマホ向
 
 ## Cloudflare Pages で公開
 
-`main` にプッシュすると GitHub Actions（`.github/workflows/deploy.yml`）が
-Cloudflare Pages の直接アップロード型プロジェクトへ自動でデプロイします。
-
-初回だけ設定が必要です。
-
-1. Cloudflare → マイプロフィール → API トークン → トークンを作成
-   （テンプレート「カスタムトークン」、権限: アカウント / Cloudflare Pages / 編集）
-2. GitHub のこのリポジトリ → Settings → Secrets and variables → Actions に登録
-   - `CLOUDFLARE_API_TOKEN`: 1 のトークン
-   - `CLOUDFLARE_ACCOUNT_ID`: Cloudflare ダッシュボードの URL や Workers & Pages 画面右側に出るアカウント ID
-3. `deploy.yml` の `PAGES_PROJECT` を Pages のプロジェクト名に合わせる
-
-手動で流したいときは GitHub の Actions タブ → Deploy to Cloudflare Pages → Run workflow。
+Workers & Pages の Pages プロジェクト → 新しいデプロイを作成 で、
+`index.html` `questions.js` `img/` をまとめた zip（またはフォルダ）をアップロードします。
+問題や画像を変えたら、同じ手順でもう一度アップロードすると更新されます。
 
 ## 問題の追加
 
