@@ -10,19 +10,19 @@ GENKI I の漢字よみ小テストを、ベルトコンベア式のスマホ向
 
 ## Cloudflare Pages で公開
 
-Workers & Pages → 作成 → Pages → Git に接続 → このリポジトリを選び、
+`main` にプッシュすると GitHub Actions（`.github/workflows/deploy.yml`）が
+Cloudflare Pages の直接アップロード型プロジェクトへ自動でデプロイします。
 
-- フレームワーク: なし
-- ビルドコマンド: 空欄
-- ビルド出力ディレクトリ: 空欄（ルート）
-- 本番ブランチ: `main`
+初回だけ設定が必要です。
 
-`questions.js` を更新してプッシュすると自動で反映されます。
-- コースは「かんたん / ふつう / おに」。時間内にできるだけ多く正解する。
-- 5連続正解で +3秒、10連続正解で FEVER（得点2倍）。金色カードは得点3倍。
-- まちがえた漢字は結果画面にまとめて出ます。
-- 問題の順番と選択肢の並びは毎回シャッフル。全問出たら引き直して、ずっと続きます。
-- PCではキーボードの 1〜4 でも答えられます。
+1. Cloudflare → マイプロフィール → API トークン → トークンを作成
+   （テンプレート「カスタムトークン」、権限: アカウント / Cloudflare Pages / 編集）
+2. GitHub のこのリポジトリ → Settings → Secrets and variables → Actions に登録
+   - `CLOUDFLARE_API_TOKEN`: 1 のトークン
+   - `CLOUDFLARE_ACCOUNT_ID`: Cloudflare ダッシュボードの URL や Workers & Pages 画面右側に出るアカウント ID
+3. `deploy.yml` の `PAGES_PROJECT` を Pages のプロジェクト名に合わせる
+
+手動で流したいときは GitHub の Actions タブ → Deploy to Cloudflare Pages → Run workflow。
 
 ## 問題の追加
 
