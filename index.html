@@ -3,7 +3,7 @@
 <title>漢字コンベア</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Klee+One:wght@600&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Comic+Neue:wght@700&family=Dela+Gothic+One&family=Klee+One:wght@600&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <style>
 /* Layout: one-screen arcade. HUD on top, sunburst stage with a conveyor belt in the middle, 2x2 answer pad at the thumb. */
 :root {
@@ -25,6 +25,8 @@
 
   --f-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
   --f-kanji: "Klee One", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-meme: "Anton", Impact, "Arial Narrow", sans-serif;
+  --f-doge: "Comic Neue", "Comic Sans MS", "Chalkboard SE", cursive;
   --f-ui: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", system-ui, sans-serif;
 
   --card-w: 128px;
@@ -184,6 +186,82 @@ button:focus-visible { outline: 4px solid var(--cyan); outline-offset: 3px; }
   80% { transform: scale(1.05) rotate(-4deg); opacity: 1; }
   100% { transform: scale(0.9) translateY(-30px) rotate(-4deg); opacity: 0; }
 }
+.quip {
+  position: absolute; z-index: 5; left: 50%; top: 64px; max-width: calc(100% - 32px);
+  transform: translateX(-50%) rotate(-2deg);
+  background: var(--ink); color: var(--paper); border: var(--outline); border-radius: 16px;
+  padding: 8px 14px; font-family: var(--f-display); font-size: clamp(16px, 5vw, 22px); line-height: 1.2;
+  text-align: center; pointer-events: none; box-shadow: 4px 4px 0 var(--pop);
+  animation: quip 1.8s cubic-bezier(.2, 1.6, .4, 1) forwards;
+}
+.quip::after { content: ""; position: absolute; left: 50%; bottom: -12px; border: 8px solid transparent; border-top-color: var(--ink); transform: translateX(-50%); }
+.quip.nice { background: var(--lime); color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.quip.nice::after { border-top-color: var(--lime); }
+@keyframes quip {
+  0% { transform: translateX(-50%) scale(0.3) rotate(-10deg); opacity: 0; }
+  15% { transform: translateX(-50%) scale(1) rotate(-2deg); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-14px) rotate(-2deg); opacity: 0; }
+}
+/* ---------- meme effects ---------- */
+#game.fried { filter: contrast(1.9) saturate(3.2) brightness(1.05); }
+#game.wasted { filter: grayscale(1) contrast(1.15); transition: filter 0.25s; }
+#game.sepia { filter: sepia(0.9) contrast(1.1) brightness(0.95); transition: filter 0.2s; }
+.meme-band {
+  position: fixed; z-index: 22; left: 0; right: 0; top: 38%; pointer-events: none;
+  background: rgba(0, 0, 0, 0.7); padding-block: 14px; text-align: center;
+  font-family: var(--f-meme); font-size: clamp(44px, 14vw, 78px); letter-spacing: 0.04em; color: #d8262b;
+  -webkit-text-stroke: 2px #000; paint-order: stroke fill;
+  animation: wasted 1.4s ease-out forwards;
+}
+@keyframes wasted { 0% { opacity: 0; transform: scale(1.6); } 15% { opacity: 1; transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
+.tbc {
+  position: absolute; z-index: 9; left: 10px; bottom: 8px; pointer-events: none;
+  padding: 8px 18px 8px 34px; background: #e9d8a6; color: #4a3417; border: 3px solid #4a3417;
+  clip-path: polygon(22px 0, 100% 0, 100% 100%, 22px 100%, 0 50%);
+  font-family: var(--f-meme); font-size: 22px; letter-spacing: 0.03em; white-space: nowrap;
+  animation: tbc 1.3s cubic-bezier(.2, 1.2, .4, 1) forwards;
+}
+@keyframes tbc { 0% { transform: translateX(-120%); } 20% { transform: translateX(0); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateX(0); } }
+.hitmark { position: fixed; z-index: 21; width: 44px; height: 44px; margin: -22px 0 0 -22px; pointer-events: none; animation: hit 0.35s ease-out forwards; }
+@keyframes hit { 0% { transform: scale(0.4); } 30% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 0; } }
+.doge { position: absolute; z-index: 5; pointer-events: none; font-family: var(--f-doge); font-weight: 700; font-size: clamp(20px, 6vw, 28px); white-space: nowrap; animation: doge 1.6s ease-out forwards; }
+@keyframes doge { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+.react { position: absolute; z-index: 6; right: 10px; top: 96px; width: clamp(84px, 26vw, 120px); pointer-events: none; animation: reactIn 1.7s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+.react.left { right: auto; left: 10px; }
+.react img { width: 100%; display: block; filter: drop-shadow(4px 4px 0 var(--ink)); }
+@keyframes reactIn {
+  0% { transform: translateY(40px) scale(0.2) rotate(-30deg); opacity: 0; }
+  18% { transform: translateY(0) scale(1.1) rotate(8deg); opacity: 1; }
+  30% { transform: scale(1) rotate(-4deg); }
+  85% { opacity: 1; }
+  100% { transform: translateY(-20px) scale(0.9) rotate(0); opacity: 0; }
+}
+.nerd { position: absolute; z-index: 6; left: 12px; right: 12px; top: 84px; display: flex; align-items: center; gap: 6px; pointer-events: none; animation: reactIn 2.2s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+.nerd .face { width: 84px; flex: none; filter: drop-shadow(3px 3px 0 var(--ink)); }
+.nerd .finger { width: 40px; flex: none; margin-left: -26px; margin-top: -40px; transform: rotate(-12deg); filter: drop-shadow(2px 2px 0 var(--ink)); }
+.nerd .bubble { min-width: 0; background: var(--paper); border: var(--outline); border-radius: 16px; padding: 8px 12px; font-weight: 800; font-size: 16px; line-height: 1.3; box-shadow: 3px 3px 0 var(--ink); }
+.nerd .bubble b { color: var(--pop); font-size: 20px; }
+.dealwithit { position: absolute; z-index: 9; left: 50%; top: 30%; transform: translateX(-50%); text-align: center; pointer-events: none; animation: dwFade 2.4s forwards; }
+.dealwithit svg { width: min(70vw, 280px); display: block; margin-inline: auto; animation: dwDrop 0.9s cubic-bezier(.5, 0, .7, 1) both; }
+.dealwithit span { display: block; margin-top: 8px; font-family: var(--f-meme); font-size: clamp(34px, 11vw, 56px); color: var(--paper); -webkit-text-stroke: 5px #000; paint-order: stroke fill; animation: dwText 0.3s 0.9s both; }
+@keyframes dwDrop { from { transform: translateY(-60vh); } to { transform: translateY(0); } }
+@keyframes dwText { from { transform: scale(2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes dwFade { 85% { opacity: 1; } 100% { opacity: 0; } }
+.stamp .shades { position: absolute; left: 50%; top: 30%; width: 110px; transform: translateX(-50%) rotate(-14deg); animation: dwDrop 0.8s 1s cubic-bezier(.5, 0, .7, 1) both; }
+.verdict-row { display: flex; align-items: center; gap: 10px; justify-content: center; }
+.verdict-row img { width: 56px; flex: none; animation: reactIn 1.2s cubic-bezier(.2, 1.6, .4, 1) both; animation-fill-mode: both; }
+.verdict-row img { animation-name: popIn; }
+@keyframes popIn { 0% { transform: scale(0) rotate(-40deg); } 60% { transform: scale(1.2) rotate(10deg); } 100% { transform: scale(1) rotate(0); } }
+.errwin { position: fixed; z-index: 25; inset: 0; display: grid; place-items: center; padding-inline: 16px; background: rgba(0, 0, 0, 0.35); }
+.errwin .win { width: 100%; max-width: 340px; background: #ece9d8; border: 2px solid #0a246a; border-radius: 8px 8px 4px 4px; box-shadow: 6px 6px 0 rgba(0,0,0,.4); font-family: Tahoma, Verdana, sans-serif; color: #000; animation: popIn 0.35s both; }
+.errwin .bar { background: linear-gradient(#2a62e5, #0a3dc4 60%, #0831a8); color: #fff; font-weight: 700; font-size: 14px; padding: 6px 8px; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center; }
+.errwin .bar i { font-style: normal; background: #d9431f; border: 1px solid #fff; border-radius: 3px; width: 20px; height: 20px; display: grid; place-items: center; font-size: 12px; }
+.errwin .body { display: flex; gap: 12px; padding: 16px 14px 8px; font-size: 14px; line-height: 1.4; align-items: flex-start; }
+.errwin .body img { width: 44px; flex: none; }
+.errwin .row { display: flex; justify-content: flex-end; padding: 8px 14px 14px; }
+.errwin button { font-family: inherit; font-size: 13px; padding: 4px 16px; background: #f4f3ee; border: 1px solid #003c74; border-radius: 3px; cursor: pointer; }
+.verdict { margin: 0; text-align: center; font-weight: 800; font-size: 16px; text-wrap: balance; }
 .float {
   position: absolute; z-index: 5; pointer-events: none;
   font-size: 26px; white-space: nowrap; transform: translate(-50%, 0);
@@ -305,6 +383,7 @@ button:focus-visible { outline: 4px solid var(--cyan); outline-offset: 3px; }
   <div class="pause" id="pause" hidden>
     <div class="sheet">
       <h2 class="telop">ていし中</h2>
+      <p class="verdict" id="pause-quip">Taking a break? Bold move.</p>
       <button class="btn primary" type="button" id="resume">つづける</button>
       <button class="btn" type="button" id="restart">さいしょから</button>
       <button class="btn" type="button" id="quit">メニューにもどる</button>
@@ -320,7 +399,8 @@ button:focus-visible { outline: 4px solid var(--cyan); outline-offset: 3px; }
     <div class="sheet">
       <div class="stamp" id="stamp"><b id="rank">S</b><span id="rank-name">漢字マスター</span></div>
       <div class="big-score"><small id="res-course">ふつう コース</small><span id="res-score">0</span></div>
-      <div class="newbest" id="newbest" hidden>じこベスト更新！</div>
+      <div class="newbest" id="newbest" hidden>じこベスト更新！ New PB!</div>
+      <div class="verdict-row"><img id="verdict-img" alt="" hidden><p class="verdict" id="verdict"></p></div>
       <div class="stats">
         <div><b id="res-correct">0</b><span>いっぱつ正解</span></div>
         <div><b id="res-acc">0%</b><span>いっぱつ正解率</span></div>
@@ -335,7 +415,7 @@ button:focus-visible { outline: 4px solid var(--cyan); outline-offset: 3px; }
     </div>
     <div class="actions">
       <button class="btn" type="button" id="to-title">コースをえらぶ</button>
-      <button class="btn primary" type="button" id="retry">もう一回！</button>
+      <button class="btn primary" type="button" id="retry">もう一回！ Run it back</button>
     </div>
   </div>
 </section>
@@ -355,9 +435,57 @@ const COURSES = [
   { id: "oni",  name: "おに",     cls: "oni",  travel: 11, pics: false, meta: "漢字だけ・イラストなし" },
 ];
 const RANKS = [ // share of cards answered right on the first try
-  [1, "S", "漢字マスター"], [0.9, "A", "すごい！"], [0.75, "B", "いいかんじ"], [0.5, "C", "もうすこし"], [0, "D", "れんしゅうしよう"],
+  [1, "S", "KANJI DEMON"], [0.9, "A", "CRACKED"], [0.75, "B", "MID+"], [0.5, "C", "NPC"], [0, "D", "BRUH"],
 ];
 const FEVER_AT = 10, GOLD_RATE = 0.1;
+
+/* Snarky commentary for English-speaking teens. Edit freely. */
+const LINES = {
+  wrong: [
+    "Bruh.", "Skill issue.", "Not it, chief.", "Sensei is disappointed.", "Google Translate is crying.",
+    "Respectfully... no.", "That's a choice.", "Who taught you that?", "Ratio'd by a kanji.",
+    "Confidently wrong. Iconic.", "Did you just guess?", "Plot twist: wrong.", "Bestie, no.",
+    "L + ratio.", "The Duolingo owl is typing...", "This is why we're still on Genki I.",
+    "Put that on your college app.", "Your future self just cringed.", "Wrong, but make it fashion.",
+  ],
+  wrongAgain: ["EMOTIONAL DAMAGE", "Twice?! TWICE?!", "Okay now you're just clicking.", "Sensei has left the chat."],
+  flow: [
+    "Ghosted by a kanji.", "It left. Like your attention span.", "Bye bye~", "The belt said 'nah'.",
+    "Too slow. Grandma was faster.", "You blinked. It's gone.", "AFK?",
+    "Were you texting? Be honest.", "Missed it like the last train home.",
+  ],
+  streak: {
+    3: ["Okay, I see you.", "Lucky streak?"],
+    5: ["Sheesh!", "Built different.", "Okay, flex."],
+    10: ["Main character energy.", "Kanji goblin mode: ON"],
+    15: ["Is this... talent?", "Lowkey cracked."],
+    20: ["Touch grass maybe?", "Literally unstoppable."],
+    25: ["Are you even human?", "Japanese teachers fear you."],
+    30: ["FLAWLESS. Screenshot it.", "The kanji bow to you."],
+  },
+  comboBreak: ["Combo: deleted.", "And it's gone.", "Choked. Classic."],
+  pause: ["Taking a break? Bold move.", "Running away? Typical.", "The kanji will wait. Judging you."],
+  result: {
+    S: ["Certified kanji demon. Go outside.", "Perfect. Kinda scary, honestly."],
+    A: ["Lowkey cracked. Not bad.", "Almost perfect. Almost."],
+    B: ["Mid... but the good kind.", "Solid. Not legendary. Solid."],
+    C: ["It's giving 'studied 5 min in the car'.", "We've seen better. We've seen worse."],
+    D: ["Sensei has left the chat.", "Was your screen off?", "Respectfully: study.", "Don't tell your parents about this one."],
+  },
+};
+const pick = (arr) => arr[(Math.random() * arr.length) | 0];
+
+/* Meme reaction images (Microsoft Fluent Emoji, MIT) */
+const FX = (n) => "img/fx/" + n + ".png";
+const REACT = {
+  wrong: ["clown", "moai", "cat-pout", "eyeroll", "sob", "cat-cry"],
+  flow: ["snail", "sleep", "skull", "cat-weary"],
+  streak: { 3: ["cat-grin"], 5: ["fire", "cat-love"], 10: ["cool"], 15: ["brain", "hundred"], 20: ["mindblown"], 25: ["goat"], 30: ["goat"] },
+  result: { S: "goat", A: "cool", B: "cat-wry", C: "melt", D: "skull" },
+};
+["nerd", "point", "skull", "cool", "goat"].concat(REACT.wrong, REACT.flow).forEach((n) => { const i = new Image(); i.src = FX(n); });
+const SHADES_SVG = `<svg class="shades-svg" viewBox="0 0 34 8" shape-rendering="crispEdges" aria-hidden="true"><g fill="#000"><rect x="0" y="0" width="34" height="2"/><rect x="3" y="2" width="12" height="3"/><rect x="4" y="5" width="10" height="1"/><rect x="6" y="6" width="6" height="1"/><rect x="19" y="2" width="12" height="3"/><rect x="20" y="5" width="10" height="1"/><rect x="22" y="6" width="6" height="1"/><rect x="15" y="2" width="4" height="1"/></g><g fill="#fff"><rect x="5" y="2" width="2" height="1"/><rect x="7" y="3" width="2" height="1"/><rect x="21" y="2" width="2" height="1"/><rect x="23" y="3" width="2" height="1"/></g></svg>`;
+const DOGE = ["wow", "such kanji", "very read", "much combo", "so 日本語", "amaze", "many brain", "very sensei", "much fast"];
 
 /* ================= question data ================= */
 const ICONS = window.WORD_ICONS || {};
@@ -418,6 +546,9 @@ const sfx = {
   gold() { [0, 4, 7, 12, 16].forEach((s, i) => tone(784 * Math.pow(2, s / 12), 0.12, "triangle", 0.08, i * 0.05)); },
   ng() { tone(180, 0.28, "sawtooth", 0.08, 0, 70); },
   miss() { tone(440, 0.4, "triangle", 0.08, 0, 140); },
+  boom() { tone(150, 0.6, "sine", 0.25, 0, 40); tone(90, 0.7, "triangle", 0.15, 0.02, 30); },
+  hit() { tone(2400, 0.03, "square", 0.05); tone(1800, 0.04, "square", 0.04, 0.02); },
+  horn() { for (let k = 0; k < 3; k++) [440, 554, 659].forEach((f) => tone(f, k === 2 ? 0.7 : 0.18, "sawtooth", 0.035, k * 0.22)); },
   tick() { tone(1200, 0.04, "square", 0.04); },
   count() { tone(660, 0.15, "square", 0.07); },
   go() { [523, 659, 784, 1046].forEach((f) => tone(f, 0.35, "square", 0.05)); },
@@ -609,6 +740,7 @@ function eat(p, btn) {
   p.done = true; resolve();
   G.correct++; if (!p.tried) G.firstTry++; G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo);
   btn.classList.add("ok");
+  hitmarker(btn); sfx.hit();
   let pts = 100 + 20 * Math.min(G.combo, 20);
   if (p.gold) pts *= 3;
   if (G.fever) pts *= 2;
@@ -629,9 +761,15 @@ function eat(p, btn) {
   ], { duration: 520, easing: "cubic-bezier(.5,0,.7,1)" });
   anim.onfinish = () => { p.el.remove(); bumpScore(); };
 
+  G.wrongRun = 0;
+  const lines = LINES.streak[G.combo];
+  if (lines) setTimeout(() => quip(pick(lines), "nice"), 250);
+  const rx = REACT.streak[G.combo];
+  if (rx && G.combo !== FEVER_AT) setTimeout(() => react(pick(rx)), 200);
+  if (G.combo % 10 === 5) setTimeout(doge, 150);
   if (G.combo === FEVER_AT) startFever();
-  else if (G.combo % 10 === 0) { banner(`${G.combo}コンボ！！`, "pink"); confetti(60); }
-  else if (G.combo % 5 === 0) { banner(`${G.combo}コンボ！`, "cyan"); sfx.bonus(); }
+  else if (G.combo % 10 === 0) { banner(`${G.combo} COMBO!!`, "pink"); confetti(60); }
+  else if (G.combo % 5 === 0) { banner(`${G.combo} COMBO!`, "cyan"); sfx.bonus(); }
   updateCombo();
 }
 
@@ -643,7 +781,18 @@ function wrong(p, btn) {
   sfx.ng(); buzz([40, 30, 40]);
   flash("red"); shake();
   const c = cardCenter(p);
-  floatText("ブッブー", c.x - c.sr.left, c.y - c.sr.top - 70, "var(--ng)");
+  floatText("✗", c.x - c.sr.left, c.y - c.sr.top - 70, "var(--ng)");
+  G.wrongRun = (G.wrongRun || 0) + 1;
+  sfx.boom();
+  if (G.wrongRun >= 2) {
+    gameFilter("wasted", 1400);
+    addFx("", "meme-band", 1450, document.body).textContent = pick(["SKILL ISSUE", "WASTED", "EMOTIONAL DAMAGE", "L"]);
+    react("skull", "left");
+  } else {
+    gameFilter("fried", 450);
+    if (Math.random() < 0.45) nerdCorrection(p.q);
+    else { quip(pick(LINES.wrong)); react(pick(REACT.wrong)); }
+  }
 }
 
 function flowAway(p) {
@@ -653,6 +802,10 @@ function flowAway(p) {
   sfx.miss();
   p.el.classList.add("flowed", "active");
   floatText(`${p.q.kanji}＝${p.q.answer}`, 90, 40, "var(--ng)");
+  quip(pick(LINES.flow));
+  react(pick(REACT.flow), "left");
+  gameFilter("sepia", 1200);
+  addFx("To Be Continued", "tbc", 1350, stage);
   setTimeout(() => p.el.remove(), 900);
 }
 
@@ -664,7 +817,7 @@ function resolve() {
 function fmtTime(sec) { const s = Math.floor(sec); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 
 function breakCombo() {
-  if (G.combo >= 3) floatText(`${G.combo}コンボ おわり…`, W / 2, 20, "var(--paper)");
+  if (G.combo >= 5) floatText(`${G.combo} combo → 0. ${pick(LINES.comboBreak)}`, W / 2, 20, "var(--paper)");
   G.combo = 0;
   if (G.fever) { G.fever = false; gameEl.classList.remove("fever"); }
   updateCombo();
@@ -672,7 +825,7 @@ function breakCombo() {
 
 function startFever() {
   G.fever = true; gameEl.classList.add("fever");
-  sfx.fever(); banner("FEVER!! 2ばい", "pink"); confetti(140); flash("white"); buzz([30, 30, 30, 30, 60]);
+  sfx.horn(); dealWithIt(); setTimeout(() => banner("FEVER!! ×2", "pink"), 1300); confetti(140); flash("white"); buzz([30, 30, 30, 30, 60]);
 }
 
 /* ---------- effects ---------- */
@@ -680,6 +833,52 @@ function floatText(text, x, y, color) {
   const d = document.createElement("div");
   d.className = "float telop"; d.textContent = text; d.style.left = x + "px"; d.style.top = y + "px"; d.style.color = color;
   stage.appendChild(d); setTimeout(() => d.remove(), 950);
+}
+function gameFilter(cls, ms) {
+  if (reduceMotion && cls === "fried") return;
+  gameEl.classList.remove("fried", "wasted", "sepia"); void gameEl.offsetWidth;
+  gameEl.classList.add(cls);
+  clearTimeout(gameFilter.t); gameFilter.t = setTimeout(() => gameEl.classList.remove(cls), ms);
+}
+function addFx(html, cls, ms, parent = gameEl) {
+  const d = document.createElement("div"); d.className = cls; d.innerHTML = html;
+  parent.appendChild(d); setTimeout(() => d.remove(), ms); return d;
+}
+let reactEl = null;
+function react(name, side) {
+  if (reactEl) reactEl.remove();
+  reactEl = addFx(`<img src="${FX(name)}" alt="">`, "react" + (side === "left" ? " left" : ""), 1750, stage);
+}
+function nerdCorrection(q) {
+  if (reactEl) reactEl.remove();
+  if (quipEl) quipEl.remove();
+  reactEl = addFx(`<img class="face" src="${FX("nerd")}" alt=""><img class="finger" src="${FX("point")}" alt=""><div class="bubble">Erm, actually... it's <b>${q.answer}</b></div>`, "nerd", 2250, stage);
+}
+function hitmarker(btn) {
+  const r = btn.getBoundingClientRect();
+  const d = addFx(`<svg viewBox="0 0 44 44" stroke="#fff" stroke-width="5" stroke-linecap="square"><g style="filter:drop-shadow(0 0 1px #000)"><path d="M6 6 L16 16 M38 6 L28 16 M6 38 L16 28 M38 38 L28 28"/></g></svg>`, "hitmark", 400, document.body);
+  d.style.left = r.left + r.width / 2 + "px"; d.style.top = r.top + r.height / 2 + "px";
+}
+function doge() {
+  const colors = ["var(--lime)", "var(--pop)", "var(--cyan)", "var(--violet)", "var(--gold)", "var(--paper)"];
+  shuffle(DOGE.slice()).slice(0, 4).forEach((t, i) => {
+    const d = addFx("", "doge", 1650, stage);
+    d.textContent = t; d.style.color = colors[(Math.random() * colors.length) | 0];
+    d.style.left = 8 + Math.random() * 50 + "%"; d.style.top = 70 + i * 34 + Math.random() * 16 + "px";
+    d.style.transform = `rotate(${(Math.random() * 24 - 12).toFixed(0)}deg)`;
+    d.style.animationDelay = i * 0.12 + "s";
+  });
+}
+function dealWithIt() {
+  addFx(`${SHADES_SVG}<span>DEAL WITH IT</span>`, "dealwithit", 2450);
+}
+let quipEl = null;
+function quip(text, kind) {
+  if (quipEl) quipEl.remove();
+  const d = document.createElement("div");
+  d.className = "quip" + (kind ? " " + kind : ""); d.textContent = text;
+  stage.appendChild(d); quipEl = d;
+  setTimeout(() => { d.remove(); if (quipEl === d) quipEl = null; }, 1850);
 }
 function banner(text, cls) {
   const d = document.createElement("div");
@@ -743,7 +942,7 @@ function endGame() {
   g.ending = true;
   for (const b of choiceBtns) b.disabled = true;
   $("pad").classList.add("ended");
-  sfx.end(); banner(`${g.total}問 クリア！`, "pink"); confetti(80); buzz(200);
+  sfx.end(); banner(`${g.total}問 CLEAR!`, "pink"); confetti(80); buzz(200);
   setTimeout(() => { if (g === G) showResult(); }, 1600);
 }
 function showResult() {
@@ -751,6 +950,16 @@ function showResult() {
   const ratio = G.firstTry / G.total;
   const [, r, rName] = RANKS.find(([min]) => ratio >= min);
   $("rank").textContent = r; $("rank-name").textContent = rName;
+  $("verdict").textContent = pick(LINES.result[r]);
+  const vImg = $("verdict-img"); vImg.src = FX(REACT.result[r]); vImg.hidden = false;
+  const stamp = $("stamp"); stamp.querySelectorAll(".shades").forEach((n) => n.remove());
+  if (r === "S") { const sh = document.createElement("div"); sh.className = "shades"; sh.innerHTML = SHADES_SVG; stamp.appendChild(sh); }
+  if (r === "D") setTimeout(() => {
+    if ($("result").hidden) return;
+    const w = addFx(`<div class="win" role="alertdialog" aria-label="kanji.exe"><div class="bar">kanji.exe <i>✕</i></div><div class="body"><img src="${FX("skull")}" alt=""><div><b>kanji.exe has stopped working.</b><br>Your brain is checking for a solution to the problem...</div></div><div class="row"><button type="button">Close program</button></div></div>`, "errwin", 60000, document.body);
+    const close = () => w.remove();
+    w.querySelector("button").onclick = close; w.querySelector(".bar i").onclick = close;
+  }, 1400);
   $("res-course").textContent = `${course.name} コース`;
   $("res-correct").textContent = `${G.firstTry}/${G.total}`;
   $("res-acc").textContent = Math.round(ratio * 100) + "%";
@@ -791,7 +1000,7 @@ document.addEventListener("keydown", (e) => {
 });
 function pauseGame() {
   if (!G || G.ending || $("game").hidden) return;
-  G.paused = true; $("pause").hidden = false; $("resume").focus();
+  G.paused = true; $("pause-quip").textContent = pick(LINES.pause); $("pause").hidden = false; $("resume").focus();
 }
 function resumeGame() {
   if (!G) return;

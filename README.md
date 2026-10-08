@@ -12,6 +12,11 @@ GENKI I の漢字よみ小テストを、ベルトコンベア式のスマホ向
   - おに: 漢字だけ（イラストなし）。スピードは同じ。
 - カードが左に流れ切るまでに答える。まちがえても流れ切るまでは答え直せます（得点半分）。
 - 10連続正解で FEVER（得点2倍）。金色カードは得点3倍。
+- ミーム風の演出つき（英語ネイティブのティーン向け）：
+  正解でヒットマーカー、5コンボで Doge 風テキスト、FEVER で Deal with it、
+  まちがえると Deep-fried＋🤓「Erm, actually...」（正解を教えてくれる）、
+  2連続ミスで WASTED 風、流れ切ると To Be Continued 風、Dランクで kanji.exe エラー。
+  英語のツッコミは `index.html` の `LINES` で編集できます。
 - 右上の ⏸ で一時停止。「つづける / さいしょから / メニューにもどる」をえらべます。
 - 結果画面に、いっぱつ正解の数・タイム・まちがえた漢字が出ます。
 - 問題の順番と選択肢の並びは毎回シャッフル。
@@ -38,5 +43,5 @@ Workers & Pages の Pages プロジェクト → 新しいデプロイを作成 
 ## イラスト
 
 `img/漢字.png` を置くと自動でそのイラストが出ます（例: `img/水.png`）。
-最初から入っている絵は [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji)（MITライセンス、`img/LICENSE-fluentui-emoji.txt`）です。
+最初から入っている絵と、演出用のリアクション画像（`img/fx/`）は [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji)（MITライセンス、`img/LICENSE-fluentui-emoji.txt`）です。
 いらすとやの絵に替えたいときは、同じファイル名で上書きしてください。
